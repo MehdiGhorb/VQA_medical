@@ -1,24 +1,28 @@
-import os
-import shutil
+from PIL import Image
+import numpy as np
 
-# Define the paths to your directories
-source_dirs = ['images', 'images2']
-destination_dir = 'images_merged'
+# Assuming processor is already defined and provides the mean and std
+image_mean = processor.image_processor.image_mean
+image_std = processor.image_processor.image_std
 
-# Create the destination directory if it doesn't exist
-if not os.path.exists(destination_dir):
-    os.makedirs(destination_dir)
+batch_idx = 1  # Change to your desired index
 
-# Copy the contents of each source directory to the destination directory
-for source_dir in source_dirs:
-    for filename in os.listdir(source_dir):
-        source_file = os.path.join(source_dir, filename)
-        destination_file = os.path.join(destination_dir, filename)
+# Get the pixel values for the specific image in the batch
+pixel_values = batch["pixel_values"][batch_idx].numpy()
 
-        # Check if it's a file or directory, and copy accordingly
-        if os.path.isfile(source_file):
-            shutil.copy2(source_file, destination_file)  # copy2 preserves metadata
-        elif os.path.isdir(source_file):
-            shutil.copytree(source_file, destination_file, dirs_exist_ok=True)
+# Unnormalize the image
+unnormalized_image = (pixel_values * np.array(image_std)[:, None, None]) + np.array(image_mean)[:, None, None]
 
-print("All files copied to 'images_merged' successfully!")
+# Clip the values to ensure they are in the correct range
+unnormalized_image = np.clip(unnormalized_image, 0, 1)
+
+# Scale to [0, 255] and convert to uint8
+unnormalized_image = (unnormalized_image * 255).astype(np.uint8)
+
+# Change the channel order from (C, H, W) to (H, W, C)
+unnormalized_image = np.moveaxis(unnormalized_image, 0, -1)
+
+# Create a PIL image and show it
+image = Image.fromarray(unnormalized_image)
+image.show()
+
