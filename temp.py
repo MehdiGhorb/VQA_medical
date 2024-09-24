@@ -1,28 +1,21 @@
+import matplotlib.pyplot as plt
+import torchvision.transforms as transforms
 from PIL import Image
-import numpy as np
 
-# Assuming processor is already defined and provides the mean and std
-image_mean = processor.image_processor.image_mean
-image_std = processor.image_processor.image_std
+# Get a batch of data from the DataLoader (assuming your dataloader yields a batch of images and labels)
+data_iter = iter(dataloader)
+images, labels = next(data_iter)
 
-batch_idx = 1  # Change to your desired index
+# Select the first image from the batch
+image_tensor = images[0]
 
-# Get the pixel values for the specific image in the batch
-pixel_values = batch["pixel_values"][batch_idx].numpy()
+# Convert the tensor to a PIL image
+# Assuming the image is normalized, we might need to denormalize it before displaying
+# Assuming the image is [C, H, W] (Channel, Height, Width), we permute it to [H, W, C]
+unloader = transforms.ToPILImage()
+image = unloader(image_tensor)
 
-# Unnormalize the image
-unnormalized_image = (pixel_values * np.array(image_std)[:, None, None]) + np.array(image_mean)[:, None, None]
-
-# Clip the values to ensure they are in the correct range
-unnormalized_image = np.clip(unnormalized_image, 0, 1)
-
-# Scale to [0, 255] and convert to uint8
-unnormalized_image = (unnormalized_image * 255).astype(np.uint8)
-
-# Change the channel order from (C, H, W) to (H, W, C)
-unnormalized_image = np.moveaxis(unnormalized_image, 0, -1)
-
-# Create a PIL image and show it
-image = Image.fromarray(unnormalized_image)
-image.show()
-
+# Display the image using matplotlib
+plt.imshow(image)
+plt.axis('off')  # Turn off the axis
+plt.show()
